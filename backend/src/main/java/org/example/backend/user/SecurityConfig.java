@@ -1,6 +1,5 @@
 package org.example.backend.user;
 
-import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,10 +12,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@AllArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig {
     private final UserDetailService userDetailService;
+
+    public SecurityConfig(UserDetailService userDetailService) {
+        this.userDetailService = userDetailService;
+    }
 
     @Bean
     public static PasswordEncoder passwordEncoder(){
@@ -35,7 +37,7 @@ public class SecurityConfig {
         http.csrf().disable()
                 .authorizeHttpRequests((authorize) ->
                         //authorize.anyRequest().authenticated()
-                        authorize.requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+                        authorize
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .anyRequest().authenticated()
 
