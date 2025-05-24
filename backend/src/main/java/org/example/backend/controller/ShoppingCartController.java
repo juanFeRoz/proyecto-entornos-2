@@ -2,7 +2,6 @@ package org.example.backend.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.ShoppingCartDto;
-import org.example.backend.model.Product;
 import org.example.backend.service.ProductService;
 import org.example.backend.service.ShoppingCartService;
 import org.springframework.http.HttpStatus;
