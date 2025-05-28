@@ -12,19 +12,20 @@ import Blog from "./pages/Blog";
 
 const App = () => {
   return (
-    <div>
+    <div className="min-h-screen bg-white">
       <Router>
         <Header />
-
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/*" element={<NotFoundPage />} />
-        </Routes>
+        <main className="container mx-auto px-4">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/*" element={<NotFoundPage />} />
+          </Routes>
+        </main>
         <Footer />
       </Router>
       {/* for suggestion we need to hit ctrl + space */}

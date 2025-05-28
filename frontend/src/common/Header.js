@@ -9,9 +9,7 @@ import Userbar from "./Userbar";
 
 const Header = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const [isUserbarOpen, setIsUserbarOpen] = useState(false);
-
   const [sticky, setSticky] = useState(false);
 
   useEffect(() => {
@@ -34,52 +32,68 @@ const Header = () => {
   };
 
   const { totalItems } = useSelector((state) => state.cart);
+
   return (
     <>
-      <div
-        className={`${sticky ? "header py-4 sticky top-0 z-50 shadow-xl" : ""}`}
-      >
-        <div className="flex flex-wrap justify-between items-center w-10/12 m-auto">
-          <div>
-            <div class="logo">Refleja</div>
-          </div>
-          <div className="md:flex flex-wrap text-base py-3">
-            {navbar.map((nav, key) => (
-              <div key={key} className="mr-5">
+      <header className={`w-full bg-white ${sticky ? "fixed top-0 left-0 w-full shadow-md z-50" : ""}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-shrink-0">
+              <Link to="/" className="text-3xl font-bold text-gray-900">
+                Refleja
+              </Link>
+            </div>
+
+            <nav className="hidden md:flex space-x-8">
+              {navbar.map((nav, key) => (
                 <Link
-                  className="active link-hover transition-all"
+                  key={key}
                   to={nav.path}
+                  className="text-base font-medium text-gray-700 hover:text-secondary transition-colors duration-200"
                 >
                   {nav.nav}
                 </Link>
-              </div>
-            ))}
+              ))}
+            </nav>
+
+            <div className="flex items-center space-x-6">
+              <button
+                onClick={toggleSidebar}
+                className="text-2xl text-gray-700 hover:text-secondary transition-colors duration-200"
+              >
+                <HiOutlineHeart />
+              </button>
+              
+              <button
+                onClick={toggleUserbar}
+                className="text-2xl text-gray-700 hover:text-secondary transition-colors duration-200"
+              >
+                <HiOutlineUser />
+              </button>
+              
+              <button
+                onClick={toggleSidebar}
+                className="relative text-2xl text-gray-700 hover:text-secondary transition-colors duration-200"
+              >
+                <MdOutlineShoppingBag />
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-secondary text-white text-xs rounded-full flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-
-          <li className="flex">
-            <Link onClick={toggleSidebar} className=" mr-5 text-2xl">
-              <HiOutlineHeart />
-            </Link>
-            <Link onClick={toggleUserbar} className=" mr-5 text-2xl">
-              <HiOutlineUser />
-            </Link>
-            <Link onClick={toggleSidebar} className="relative  mr-5 text-2xl">
-              <MdOutlineShoppingBag />
-
-              <div className="items_count">
-                <span className="text-white">{totalItems}</span>
-              </div>
-            </Link>
-          </li>
         </div>
-      </div>
+      </header>
+
       <Sidebar
         isSidebarOpen={isSidebarOpen}
-        closeSidebar={() => toggleSidebar()}
+        closeSidebar={toggleSidebar}
       />
       <Userbar
         isUserbarOpen={isUserbarOpen}
-        closeUserbar={() => toggleUserbar()}
+        closeUserbar={toggleUserbar}
       />
     </>
   );

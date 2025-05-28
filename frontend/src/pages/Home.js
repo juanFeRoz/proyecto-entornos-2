@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Banner from "../components/Banner";
 import Category from "../components/Category";
 import FlashSale from "../components/FlashSale";
@@ -8,13 +8,15 @@ import Arrived from "../components/Arrived";
 
 const Home = () => {
   return (
-    <div>
-      <Banner />
-      <Category />
-      <FlashSale />
-      <Offer />
-      <BestSeller />
-      <Arrived />
+    <div className="space-y-8">
+      <Suspense fallback={<div>Cargando...</div>}>
+        <Banner />
+        <Category />
+        <FlashSale />
+        <Offer />
+        <BestSeller />
+        <Arrived />
+      </Suspense>
     </div>
   );
 };

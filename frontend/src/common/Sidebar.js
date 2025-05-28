@@ -1,83 +1,103 @@
 import React, { useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { getCartTotal, removeItem } from "../redux/cartSlice";
+import { fetchCart, removeProductFromCart } from "../redux/cartSlice";
 import { Link } from "react-router-dom";
 
 const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
   const dispatch = useDispatch();
-  const { data: cartProducts, totalAmount } = useSelector(
+  const { data: cartProducts = [], totalAmount = 0, status, error } = useSelector(
     (state) => state.cart
   );
 
-  const cartSelector = useSelector((state) => state.cart);
   useEffect(() => {
-    dispatch(getCartTotal());
-  }, [cartSelector]);
+    if (status === 'idle') {
+      dispatch(fetchCart());
+    }
+  }, [status, dispatch]);
 
-  const removeFromCart = (itemId) => {
-    dispatch(removeItem({ id: itemId }));
-    dispatch(getCartTotal());
+  const removeFromCart = async (productName) => {
+    try {
+      await dispatch(removeProductFromCart(productName));
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+    }
   };
-  return (
-    <div>
-      <div
-        style={{
-          zIndex: "100",
-          transform: `translateX(${isSidebarOpen ? "0%" : "100%"})`,
-        }}
-        className="fixed top-0 right-0 h-full bg-white shadow-lg transition-transform duration-300 ease-in-out overflow-y-auto"
-      >
-        <div className="border-b mb-4 bg-secondary">
-          <h1 className="text-3xl p-4">Tu carro</h1>
-        </div>
 
-        <div className="p-4">
-          <span className="absolute top-0 right-0 p-4" onClick={closeSidebar}>
-            <FaTimes />
-          </span>
+  const renderContent = () => {
+    if (status === 'loading') {
+      return <div className="flex justify-center items-center h-[60vh]">
+        <p>Cargando...</p>
+      </div>;
+    }
 
-          {cartProducts.length === 0 ? (
-            <div className="text-3xl font-bold uppercase">
-              Tu carro no tiene productos.
-            </div>
-          ) : (
-            <div>
-              {cartProducts.map((item, key) => (
-                <div className="flex justify-between mb-4" key={key}>
-                  <div className="flex">
-                    <div className="relative">
-                      <img src={item.img} alt="img" height={84} width={84} />
-                      <span
-                        className="absolute top-0 -mt-2 -ml-2 bg-red-600 text-white"
-                        onClick={() => removeFromCart(item.id)}
-                      >
-                        <FaTimes />
-                      </span>
-                    </div>
+    if (error) {
+      return <div className="flex justify-center items-center h-[60vh]">
+        <p className="text-red-500">Error: {error}</p>
+      </div>;
+    }
 
-                    <div>
-                      <p>{item.title}</p>
-                    </div>
-                  </div>
+    if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
+      return <p className="text-center py-8">Tu carrito está vacío</p>;
+    }
 
-                  <div>
-                    <p>{item.price}</p>
-                    <p>Ctd: {item.quantity}</p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="flex p-6 items-center bg-black w-full text-white font-bold sticky bottom-0">
-                <h2>
-                  Sub Total : <span>${totalAmount}</span>
-                </h2>
-                <div className="ml-4 bg-rose-100 rounded-sm py-3 px-6 text-black">
-                  <Link to="/cart">Mirar el carro</Link>
-                </div>
+    return (
+      <>
+        {cartProducts.map((item) => (
+          <div key={item.id || item.name} className="flex items-center justify-between py-2 border-b">
+            <div className="flex items-center">
+              <img 
+                src={item.image} 
+                alt={item.name} 
+                className="w-16 h-16 object-cover rounded"
+                onError={(e) => {
+                  e.target.src = '/placeholder-image.jpg'; // Imagen por defecto si falla la carga
+                }}
+              />
+              <div className="ml-4">
+                <h4 className="font-medium">{item.name}</h4>
+                <p className="text-gray-600">${item.price}</p>
+                <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
               </div>
             </div>
-          )}
+            <button
+              onClick={() => removeFromCart(item.name)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <FaTimes />
+            </button>
+          </div>
+        ))}
+        
+        <div className="mt-4 border-t pt-4">
+          <div className="flex justify-between items-center">
+            <span className="font-semibold">Total:</span>
+            <span className="font-bold">${totalAmount}</span>
+          </div>
+          <Link
+            to="/cart"
+            className="block w-full text-center bg-secondary text-white py-2 rounded mt-4 hover:bg-opacity-90"
+            onClick={closeSidebar}
+          >
+            Ver Carrito
+          </Link>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div className={`fixed top-0 right-0 w-[300px] h-full bg-white shadow-lg transform ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 z-50`}>
+      <div className="p-5">
+        <div className="flex justify-between items-center border-b pb-4">
+          <h3 className="text-xl font-semibold">Carrito</h3>
+          <button onClick={closeSidebar}>
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
+
+        <div className="mt-4">
+          {renderContent()}
         </div>
       </div>
     </div>

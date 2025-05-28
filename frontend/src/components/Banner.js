@@ -7,16 +7,55 @@ import { MdOutlineChair } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { IoIosArrowRoundBack, IoIosArrowRoundForward } from "react-icons/io";
 
+const PrevArrow = ({ currentSlide, slideCount, ...props }) => {
+  return (
+    <button
+      {...props}
+      className="slick-prev slick-arrow"
+      aria-hidden="true"
+      aria-disabled={currentSlide === 0}
+      type="button"
+    >
+      <IoIosArrowRoundBack />
+    </button>
+  );
+};
+
+const NextArrow = ({ currentSlide, slideCount, ...props }) => {
+  return (
+    <button
+      {...props}
+      className="slick-next slick-arrow"
+      aria-hidden="true"
+      aria-disabled={currentSlide === slideCount - 1}
+      type="button"
+    >
+      <IoIosArrowRoundForward />
+    </button>
+  );
+};
+
 const Banner = () => {
-  var settings = {
+  const settings = {
     dots: false,
     infinite: true,
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,
-    prevArrow: <IoIosArrowRoundBack />,
-    nextArrow: <IoIosArrowRoundForward />,
+    prevArrow: <PrevArrow />,
+    nextArrow: <NextArrow />,
+    responsive: [
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: 1,
+          slidesToScroll: 1,
+          infinite: true
+        }
+      }
+    ]
   };
+
   return (
     <div className="banner">
       <div className="w-10/12 m-auto">
@@ -32,7 +71,7 @@ const Banner = () => {
 
             <Link
               to="/shop"
-              className="text-white common-hover text-4xl rounded-full ml-4  px-7 py-2"
+              className="text-white common-hover text-4xl rounded-full ml-4 px-7 py-2"
             >
               Compra ahora
             </Link>
@@ -44,9 +83,8 @@ const Banner = () => {
               <div className="banner-slider rounded-3xl" key={key}>
                 <img
                   src={data.banner}
-                  alt="databannerinmg"
-                  className="rounded-3xl"
-                  width={"100%"}
+                  alt="banner"
+                  className="rounded-3xl w-full h-auto"
                 />
               </div>
             ))}
