@@ -2,21 +2,23 @@ import React, { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { PiMinus, PiPlus } from "react-icons/pi";
 import { useDispatch } from "react-redux";
-import { addProductToCart } from "../redux/cartSlice";
+import { addProductToCart as callAddToCart } from "../redux/cartSlice"; // Importa la acción asíncrona
 import { Link } from "react-router-dom";
 
 const Modal = ({ isModalOpen, handleClose, data }) => {
   const [qty, setQty] = useState(1);
   const [addedItemToCart, setAddedItemToCart] = useState(false);
-
   const dispatch = useDispatch();
 
-  const addItemToCart = async (product) => {
+  const handleAddToCart = async (productName) => {
     try {
-      await dispatch(addProductToCart(product.name));
+      await dispatch(callAddToCart(productName));
       setAddedItemToCart(true);
+      // Aquí podrías añadir alguna notificación visual
+      console.log(`Añadido ${productName} al carrito desde el modal`);
     } catch (error) {
-      console.error("Error adding item to cart:", error);
+      console.error("Error al añadir al carrito desde el modal:", error);
+      // Aquí podrías mostrar un mensaje de error al usuario
     }
   };
 
@@ -41,68 +43,72 @@ const Modal = ({ isModalOpen, handleClose, data }) => {
   if (!data) return null;
 
   return (
-    <>
+    <div>
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="modal-overlay fixed inset-0 bg-black opacity-50"></div>
-          <div className="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
-            <div className="modal-content py-4 text-left px-6">
-              <div className="flex justify-between items-center pb-3">
-                <p className="text-2xl font-bold">{data.title}</p>
-                <button
-                  onClick={handleClose}
-                  className="modal-close cursor-pointer z-50"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-              <div className="my-4">
-                <img
-                  src={data.img}
-                  alt={data.title}
-                  className="w-full h-64 object-contain"
-                />
-                <p className="text-gray-700 text-lg mt-4">{data.description}</p>
-                <p className="text-xl font-bold mt-2">${data.price}</p>
-                
-                <div className="flex items-center mt-4">
-                  <button
-                    onClick={decreaseQuantity}
-                    className="bg-gray-200 px-3 py-1 rounded-l"
-                  >
-                    <PiMinus />
-                  </button>
-                  <span className="bg-gray-100 px-4 py-1">{qty}</span>
-                  <button
-                    onClick={increaseQuantity}
-                    className="bg-gray-200 px-3 py-1 rounded-r"
-                  >
-                    <PiPlus />
-                  </button>
+        <div className="modal-overlay">
+          <div className="modal-content w-2/3 relative bg-white overflow-hidden" style={{ zIndex: 120 }}> {/* Añadido zIndex */}
+            <span
+              className="absolute top-0 right-0 p-4 cursor-pointer"
+              onClick={() => handleClose()}
+            >
+              <FaTimes />
+            </span>
+            <div className="flex">
+              <div className="relative">
+                <div className="flash_sale_img">
+                  <img src={data.img} alt={data.title} style={{ maxHeight: '300px', objectFit: 'contain' }} />
                 </div>
               </div>
-              <div className="flex justify-end pt-2">
-                {!addedItemToCart ? (
-                  <button
-                    onClick={() => addItemToCart(data)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Add to Cart
-                  </button>
-                ) : (
-                  <Link
-                    to="/cart"
-                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    View Cart
-                  </Link>
-                )}
+
+              <div className="modal-info ml-6">
+                <p className="mb-2 font-bold">{data.title}</p> {/* Usando data.title ahora */}
+                <p className="text-red-600 text-xl">${data.price}</p>
+                <p className="my-2">{data.description || data.brand || 'No description'}</p> {/* Intentando mostrar descripción o marca */}
+
+                <div className="flex items-center mb-2">
+                  {/* ... Selector de shades (sin cambios) ... */}
+                </div>
+                <p className="text-green-700 m-0">In Stock {/* ... */}</p>
+                <div className="flex items-center">
+                  <div className="flex mr-3">
+                    <button
+                      className="border mt-4 py-3 px-6"
+                      onClick={() => decreaseQuantity()} // Pasando solo la función
+                    >
+                      <PiMinus />
+                    </button>
+                    <span className="border mt-4 py-3 px-6 count">
+                      {qty}
+                    </span>
+                    <button
+                      className="border mt-4 py-3 px-6"
+                      onClick={() => increaseQuantity()} // Pasando solo la función
+                    >
+                      <PiPlus />
+                    </button>
+                  </div>
+
+                  <div className="addtocart mr-3">
+                    {!addedItemToCart ? (
+                      <button
+                        onClick={() => handleAddToCart(data.name)} // Ahora llama a la acción asíncrona con el nombre
+                        className="mt-4 px-6 py-3 text-white bg-blue-500 rounded hover:bg-blue-700"
+                      >
+                        Add To Cart
+                      </button>
+                    ) : (
+                      <button className="mt-4 px-6 py-3 text-white bg-green-500 rounded hover:bg-green-700">
+                        <Link to="/cart">View Cart</Link>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

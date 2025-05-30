@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 import { BiCart } from "react-icons/bi";
 import Modal from "../common/Modal";
 import Heading from "../common/Heading";
@@ -12,24 +11,14 @@ import {
   IoMdHeartEmpty,
   IoMdSearch,
 } from "react-icons/io";
+import { useProducts } from "../data/ProductsData"; // Importa el hook personalizado
+import { useDispatch } from "react-redux";
+import { addProductToCart as callAddToCart } from "../redux/cartSlice";
 
 const BestSeller = () => {
-  const [products, setProducts] = useState([]);
+  const { products, loading, error } = useProducts(); // Usa el hook para acceder a los datos
   const [isModalOpen, setIsModalOpen] = useState(null);
-
-  useEffect(() => {
-    axios
-      .get("http://localhost:8080/api/products")
-      .then((response) => {
-        const uniqueProducts = response.data.filter(
-          (product, index, self) =>
-            index === self.findIndex((p) => p.id === product.id)
-        )
-        .slice(0, 7);
-        setProducts(uniqueProducts);
-      })
-      .catch((error) => console.error("Error fetching products:", error));
-  }, []);
+  const dispatch = useDispatch();
 
   const handleOpen = (productId) => {
     setIsModalOpen(productId);
@@ -39,8 +28,12 @@ const BestSeller = () => {
     setIsModalOpen(null);
   };
 
+  const handleAddToCart = (productName) => {
+    dispatch(callAddToCart(productName));
+    console.log(`Añadiendo ${productName} al carrito desde BestSeller`);
+  };
+
   const getImageById = (id, productImage) => {
-    // Si el producto tiene una imagen válida en el backend, usarla
     if (productImage && productImage !== "null" && productImage !== "undefined") {
       return productImage;
     }
@@ -57,42 +50,50 @@ const BestSeller = () => {
     nextArrow: <IoIosArrowRoundForward />,
   };
 
+  if (loading) {
+    return <div>Cargando productos...</div>;
+  }
+
+  if (error) {
+    return <div>Error al cargar los productos: {error}</div>;
+  }
+
+  const topSellers = products.slice(0, 7); // Tomar solo los primeros 7
+
   return (
     <div className="products w-10/12 m-auto">
       <Heading heading={"Top Sellers"} />
       <Slider {...sliderSettings}>
-        {products.map((item) => (
+        {topSellers.map((item) => (
           <div key={item.id} className="mt-8">
-            <div className="overflow-hidden relative ml-4">
+            {/* ... (tu renderizado de cada producto) ... */}
+            <div className="overflow-hidden relative ml-4 group"> {/* Añadido 'group' */}
               <div className="relative rounded-3xl overflow-hidden">
-              <img
-                src={getImageById(item.id, item.image)}
-                alt={item.name}
-                className="rounded-3xl w-full h-[250px] object-contain"
-              />
-
-                <div className="opacity-0 absolute top-0 right-0 m-4 hover:opacity-100 transition">
-                  <div>
-                    <div className="bg-white p-4 rounded-full mb-2">
-                      <IoMdHeartEmpty />
-                    </div>
-                    <div className="bg-white p-4 rounded-full">
-                      <IoMdSearch />
-                    </div>
-                  </div>
+                <img
+                  src={getImageById(item.id, item.image)}
+                  alt={item.name}
+                  className="rounded-3xl w-full h-[250px] object-contain"
+                />
+                <div className="opacity-0 group-hover:opacity-100 absolute top-2 right-2 m-4 flex flex-col gap-2 transition">
+                  <button className="bg-white p-2 rounded-full shadow hover:bg-gray-100">
+                    <IoMdHeartEmpty size={20} />
+                  </button>
+                  <button
+                    className="bg-white p-2 rounded-full shadow hover:bg-gray-100"
+                    onClick={() => handleOpen(item.id)}
+                  >
+                    <IoMdSearch size={20} />
+                  </button>
                 </div>
-                <div className="opacity-0 absolute -bottom-3 right-0 bg-white p-4 rounded-s-2xl hover:opacity-100 transition">
-                  <div className="bg-black text-white h-10 w-10 grid place-items-center rounded-3xl">
-                    <button
-                      className="text-2xl"
-                      onClick={() => handleOpen(item.id)}
-                    >
-                      <BiCart />
-                    </button>
-                  </div>
+                <div className="opacity-0 group-hover:opacity-100 absolute bottom-2 right-2 bg-white p-2 rounded-full shadow transition">
+                  <button
+                    className="bg-black text-white h-8 w-8 grid place-items-center rounded-full text-sm"
+                    onClick={() => handleAddToCart(item.name)}
+                  >
+                    <BiCart size={20} />
+                  </button>
                 </div>
               </div>
-
               <div className="product-details mt-2">
                 <p className="mb-2">{item.name}</p>
                 <p>${item.price.toLocaleString()}</p>
@@ -103,7 +104,13 @@ const BestSeller = () => {
       </Slider>
 
       <Modal
-        data={products.find((item) => item.id === isModalOpen)}
+        data={products.find((item) => item.id === isModalOpen) ? {
+          img: products.find((item) => item.id === isModalOpen)?.image,
+          title: products.find((item) => item.id === isModalOpen)?.name,
+          price: products.find((item) => item.id === isModalOpen)?.price,
+          description: products.find((item) => item.id === isModalOpen)?.brand || "Marca no disponible",
+          ...products.find((item) => item.id === isModalOpen),
+        } : null}
         isModalOpen={isModalOpen}
         handleClose={handleClose}
       />
@@ -112,4 +119,3 @@ const BestSeller = () => {
 };
 
 export default BestSeller;
-

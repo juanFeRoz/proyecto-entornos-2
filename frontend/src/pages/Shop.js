@@ -1,14 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageHeading from "../common/PageHeading";
-import { products } from "../data/Data";
 import { BiCart } from "react-icons/bi";
 import Modal from "../common/Modal";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import { IoMdHeartEmpty, IoMdSearch } from "react-icons/io";
+import { useProducts } from "../data/ProductsData";
+import { addProductToCart as callAddToCartApi } from "../Api/cartApi"; 
+import { useSearchParams } from "react-router-dom"; 
 
 const Shop = () => {
   const [isModalOpen, setIsModalOpen] = useState(null);
+  const { products: allProducts, loading, error } = useProducts();
+  const [searchParams] = useSearchParams(); 
+  const initialCategoryFilter = searchParams.get('category'); 
+
+  const [filters, setFilters] = useState({
+    categories: initialCategoryFilter ? [initialCategoryFilter] : [], 
+    brands: [],
+    priceRange: [0, 200000],
+  });
+
+  useEffect(() => {
+    const categoryFromURL = searchParams.get('category');
+    if (categoryFromURL && !filters.categories.includes(categoryFromURL)) {
+      setFilters(prevFilters => ({ ...prevFilters, categories: [categoryFromURL] }));
+    } else if (!categoryFromURL) {
+      if (initialCategoryFilter && filters.categories.includes(initialCategoryFilter)) {
+        setFilters(prevFilters => ({ ...prevFilters, categories: [] }));
+      }
+    }
+  }, [searchParams, initialCategoryFilter]);
 
   const handleOpen = (productId) => {
     setIsModalOpen(productId);
@@ -17,36 +39,25 @@ const Shop = () => {
     setIsModalOpen(null);
   };
 
-  const [filters, setFilters] = useState({
-    categories: [],
-    brands: [],
-    priceRange: [0, 1500000],
-  });
+  const categoryList = allProducts
+    ? Array.from(new Set(allProducts.map((product) => product.category?.name))).filter(Boolean)
+    : [];
+  console.log("categoryList:", categoryList);
 
-  const categoryList = Array.from(
-    new Set(products.map((product) => product.category))
-  );
+  const brandList = allProducts
+    ? Array.from(new Set(allProducts.map((product) => product.brand))).filter(Boolean)
+    : [];
+  console.log("brandList:", brandList);
 
-  const brandList = Array.from(
-    new Set(products.map((product) => product.brand))
-  );
-
-  const filteredProducts = products.filter((product) => {
-    if (
-      filters.categories.length > 0 &&
-      !filters.categories.includes(product.category)
-    )
-      return false;
-    if (filters.brands.length > 0 && !filters.brands.includes(product.brand))
-      return false;
-
-    const price = parseFloat(product.price);
-
-    if (price < filters.priceRange[0] || price > filters.priceRange[1])
-      return false;
-
-    return true;
-  });
+  const filteredProducts = allProducts
+    ? allProducts.filter((product) => {
+        const categoryMatch = filters.categories.length === 0 || filters.categories.includes(product.category?.name?.toLowerCase());
+        const brandMatch = filters.brands.length === 0 || filters.brands.includes(product.brand);
+        const price = parseFloat(product.price);
+        const priceMatch = price >= filters.priceRange[0] && price <= filters.priceRange[1];
+        return categoryMatch && brandMatch && priceMatch;
+      })
+    : [];
 
   const handlePriceChange = (value) => {
     setFilters({ ...filters, priceRange: value });
@@ -63,6 +74,23 @@ const Shop = () => {
     setFilters({ ...filters, [filterType]: updatedFilters });
   };
 
+  const handleAddToCart = async (productName) => {
+    try {
+      const result = await callAddToCartApi(productName);
+      console.log("Producto añadido al carrito:", result);
+    } catch (error) {
+      console.error("Error al añadir producto al carrito:", error);
+    }
+  };
+
+  if (loading) {
+    return <div>Cargando productos...</div>;
+  }
+
+  if (error) {
+    return <div>Error al cargar los productos: {error}</div>;
+  }
+
   return (
     <div>
       <PageHeading home={"home"} pagename={"Shop"} />
@@ -71,99 +99,94 @@ const Shop = () => {
         <div className="w-10/12 m-auto flex gap-3 items-start mt-8 ">
           <div className="filterproduct w-1/4 bg-white shadow-lg p-4">
             <div>
-              <div className="my-4">
-                <h1 className="text-4xl font-semibold">Filter</h1>
+              <h3 className="font-semibold mb-2">Precio</h3>
+              <div className="mb-4">
+                <Slider
+                  range
+                  min={0}
+                  max={200000}
+                  defaultValue={filters.priceRange}
+                  onChange={handlePriceChange}
+                />
+                <div className="text-sm text-gray-600 mt-2">
+                  Rango: ${filters.priceRange[0].toLocaleString()} - ${filters.priceRange[1].toLocaleString()}
+                </div>
               </div>
 
-              <div className="my-4">
-                <h1 className="mb-3 text-3xl font-semibold">Por precio</h1>
-                <div>
-                  <Slider
-                    min={0}
-                    max={1500000}
-                    range
-                    defaultValue={filters.priceRange}
-                    onChange={handlePriceChange}
-                  />
-
-                  <div className="flex justify-between">
-                    <span>Min Price:${filters.priceRange[0]}</span>
-                    <span>Max Price:${filters.priceRange[1]}</span>
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Categorías</h3>
+                {categoryList.map((category) => (
+                  <div key={category} className="mb-1">
+                    <label>
+                      <input
+                        type="checkbox"
+                        value={category}
+                        checked={filters.categories.includes(category.toLowerCase())}
+                        onChange={(e) => handleCheckboxChange('categories', e.target.value)}
+                        className="mr-2"
+                      />
+                      {category}
+                    </label>
                   </div>
-                </div>
+                ))}
               </div>
 
-              <div className="my-4">
-                <h1 className="mb-3 text-3xl font-semibold">Por categoria</h1>
-
-                <div>
-                  {categoryList.map((category, key) => (
-                    <div className="flex items-center" key={key}>
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Marcas</h3>
+                {brandList.map((brand) => (
+                  <div key={brand} className="mb-1">
+                    <label>
                       <input
                         type="checkbox"
-                        checked={filters.categories.includes(category)}
-                        onChange={() =>
-                          handleCheckboxChange("categories", category)
-                        }
-                      />
-                      <div>{category}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="my-4">
-                <h1 className="mb-3 text-3xl font-semibold">Por marca</h1>
-                <div>
-                  {brandList.map((brand, key) => (
-                    <div className="flex items-center" key={key}>
-                      <input
-                        type="checkbox"
+                        value={brand}
                         checked={filters.brands.includes(brand)}
-                        onChange={() => handleCheckboxChange("brands", brand)}
+                        onChange={(e) => handleCheckboxChange('brands', e.target.value)}
+                        className="mr-2"
                       />
-                      <div>{brand}</div>
-                    </div>
-                  ))}
-                </div>
+                      {brand}
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
           <div className="w-8/12">
             <div className="grid grid-cols-3 gap-3">
               {filteredProducts.map((item, index) => (
-                <div key={index}>
-                  <div className="overflow-hidden relative ml-4">
+                <div key={index} className="mt-8">
+                  <div className="overflow-hidden relative group"> {/* Añadido 'group' */}
                     <div className="image-container relative">
                       <div className="rounded-3xl">
-                        <img src={item.img} alt="img" className="rounded-3xl" />
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="rounded-3xl w-full h-auto object-contain max-h-200px"
+                        />
                       </div>
-
-                      <div className="opacity-0 absolute top-0 right-0 m-4">
-                        <div>
-                          <div className="bg-white p-4 rounded-full mb-2">
-                            <IoMdHeartEmpty />
-                          </div>
-                          <div className="bg-white p-4 rounded-full">
-                            <IoMdSearch />
-                          </div>
-                        </div>
+                      <div className="opacity-0 group-hover:opacity-100 absolute top-2 right-2 m-4 flex flex-col gap-2 transition-opacity duration-300 ease-in-out"> {/* Flex column para los iconos de arriba */}
+                        <button className="bg-white p-2 rounded-full shadow hover:bg-gray-100">
+                          <IoMdHeartEmpty size={20} />
+                        </button>
+                        <button
+                          className="bg-white p-2 rounded-full shadow hover:bg-gray-100"
+                          onClick={() => handleOpen(item.id)}
+                        >
+                          <IoMdSearch size={20} />
+                        </button>
                       </div>
-                      <div className="opacity-0 absolute -bottom-3 right-0 bg-white p-4 rounded-s-2xl">
-                        <div className="bg-black text-white h-10 w-10 grid place-items-center rounded-3xl">
-                          <button
-                            className="text-2xl"
-                            onClick={() => handleOpen(item.id)}
-                          >
-                            <BiCart />
-                          </button>
-                        </div>
+                      <div className="opacity-0 group-hover:opacity-100 absolute bottom-2 right-2 bg-white p-2 rounded-full shadow transition-opacity duration-300 ease-in-out">
+                        <button
+                          className="bg-black text-white h-8 w-8 grid place-items-center rounded-full text-sm"
+                          onClick={() => handleAddToCart(item.name)}
+                        >
+                          <BiCart />
+                        </button>
                       </div>
                     </div>
 
                     <div className="product-details mt-2">
-                      <p className="mb-2">{item.title}</p>
-                      <p>${item.price}</p>
+                      <p className="mb-1">{item.name}</p>
+                      <p className="text-gray-600">${item.price}</p>
                     </div>
                   </div>
                 </div>
@@ -173,7 +196,13 @@ const Shop = () => {
         </div>
 
         <Modal
-          data={products.find((item) => item.id === isModalOpen)}
+          data={allProducts && allProducts.find((item) => item.id === isModalOpen) ? {
+            img: allProducts.find((item) => item.id === isModalOpen)?.image,
+            title: allProducts.find((item) => item.id === isModalOpen)?.name,
+            price: allProducts.find((item) => item.id === isModalOpen)?.price,
+            description: allProducts.find((item) => item.id === isModalOpen)?.brand || "Marca no disponible",
+            ...allProducts.find((item) => item.id === isModalOpen),
+          } : null}
           isModalOpen={isModalOpen}
           handleClose={handleClose}
         />

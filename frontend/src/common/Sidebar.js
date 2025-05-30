@@ -36,7 +36,7 @@ const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
         <p className="text-red-500">Error: {error}</p>
       </div>;
     }
-
+    console.log("Productos en Sidebar:", cartProducts);
     if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
       return <p className="text-center py-8">Tu carrito está vacío</p>;
     }

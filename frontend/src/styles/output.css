@@ -1120,6 +1120,11 @@ video {
   background-image: linear-gradient(to right, var(--tw-gradient-stops));
 }
 
+.bg-secondary-scroll {
+  background-color: var(--color-secondary);
+  transition: background-color 0.3s ease-in-out;
+}
+
 .from-blue-600 {
   --tw-gradient-from: #2563eb var(--tw-gradient-from-position);
   --tw-gradient-to: rgb(37 99 235 / 0) var(--tw-gradient-to-position);

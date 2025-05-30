@@ -1,74 +1,148 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { XMarkIcon } from '@heroicons/react/24/solid'; // Importa el icono de la "x"
 
-const LoginForm = () => {
+const LoginForm = ({ onClose }) => {
+  const [isRegistering, setIsRegistering] = useState(true);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const [isVisible, setIsVisible] = useState(true);
+
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (isRegistering && password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    try {
+      const url = isRegistering
+        ? "http://localhost:8080/api/auth/register"
+        : "http://localhost:8080/api/auth/login";
+      const payload = { username: username, password: password };
+
+      // ✅ Aquí se añade `withCredentials: true` para que se reciba la cookie JSESSIONID
+      const response = await axios.post(url, payload, {
+        withCredentials: true,
+      });
+
+      console.log(
+        isRegistering ? "Registro exitoso:" : "Inicio de sesión exitoso:",
+        response.data
+      );
+
+      if (isRegistering) {
+        setIsRegistering(false); // Cambia a modo login tras registrarse
+      } else {
+        console.log("¡Inicio de sesión exitoso!");
+        localStorage.setItem("loggedInUser", username);
+        navigate("/");
+        setIsVisible(false);
+        if (onClose) onClose();
+      }
+    } catch (error) {
+      console.error(
+        isRegistering ? "Error al registrar usuario:" : "Error al iniciar sesión:",
+        error.response ? error.response.data : error.message
+      );
+      setError(
+        error.response?.data?.message ||
+          (isRegistering ? "Error al registrar la cuenta." : "Credenciales incorrectas.")
+      );
+    }
+  };
+
+  const toggleAuthMode = () => {
+    setIsRegistering(!isRegistering);
+    setError("");
+  };
+
+  if (!isVisible) return null;
+
   return (
-    <div className="max-w-md mx-auto p-8">
-      {/* Contenedor 3D/Glass */}
-      <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-2xl p-8 border border-white/20 transform transition-all hover:scale-[1.02]">
-        {/* Título */}
-        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-          Welcome Back
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+      <div className="bg-white p-8 rounded-md shadow-lg relative"> {/* Añadido 'relative' para posicionar la 'x' */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        )}
+        <h2 className="text-2xl font-bold mb-4">
+          {isRegistering ? "Crear Cuenta" : "Iniciar Sesión"}
         </h2>
-
-        {/* Formulario */}
-        <form className="space-y-6">
-          {/* Email */}
+        {error && <p className="text-red-500 mb-2">{error}</p>}
+        <form onSubmit={handleAuthSubmit} className="space-y-4">
           <div>
-            <label 
-              htmlFor="email" 
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Tu correo:
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Usuario:</label>
             <input
-              type="email"
-              id="email"
-              className="w-full px-4 py-3 rounded-lg bg-white/70 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="example@dismet.com"
+              type="text"
+              className="w-full border border-gray-300 rounded-md p-2"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
-
-          {/* Password */}
           <div>
-            <label 
-              htmlFor="password" 
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Tu contraseña:
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Contraseña:</label>
             <input
               type="password"
-              id="password"
-              className="w-full px-4 py-3 rounded-lg bg-white/70 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="••••••••"
+              className="w-full border border-gray-300 rounded-md p-2"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
 
-          {/* Botón Login */}
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300"
-          >
-            Sign In
-          </button>
+          {isRegistering && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Confirmar Contraseña:</label>
+              <input
+                type="password"
+                className="w-full border border-gray-300 rounded-md p-2"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
-          {/* Links inferiores */}
-          <div className="flex justify-between text-sm mt-4">
-            <Link 
-              to="/register" 
-              className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+          <div className="flex justify-end">
+            {!onClose && (
+              <button
+                type="button"
+                className="px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 mr-2"
+              >
+                Cancelar {/* Si no hay onClose prop, mostramos un "Cancelar" genérico */}
+              </button>
+            )}
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
             >
-              ¿No tienes una cuenta?
-            </Link>
-            <Link 
-              to="/forgot-password" 
-              className="text-gray-600 hover:text-gray-800 hover:underline transition-colors"
-            >
-              ¿Olvidaste tu contraseña?
-            </Link>
+              {isRegistering ? "Registrarse" : "Iniciar Sesión"}
+            </button>
           </div>
         </form>
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={toggleAuthMode}
+            className="text-blue-600 hover:text-blue-800 hover:underline"
+          >
+            {isRegistering
+              ? "¿Ya tienes una cuenta? Iniciar sesión"
+              : "¿No tienes una cuenta? Regístrate"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { cartApi } from "../services/cartApi";
+import { getCart as fetchCartApi, addProductToCart as addToCartApi, removeProductFromCart as removeFromCartApi } from "../Api/cartApi";
 
 const storeInLocalStorage = (data) => {
   localStorage.setItem("cart", JSON.stringify(data));
@@ -20,8 +20,7 @@ export const fetchCart = createAsyncThunk(
   'cart/fetchCart',
   async () => {
     try {
-      const response = await cartApi.getCart();
-      // Asegurarse de que la respuesta tenga el formato correcto
+      const response = await fetchCartApi();
       return {
         products: Array.isArray(response.products) ? response.products : [],
         total: response.total || 0
@@ -37,7 +36,7 @@ export const addProductToCart = createAsyncThunk(
   'cart/addProduct',
   async (productName) => {
     try {
-      const response = await cartApi.addToCart(productName);
+      const response = await addToCartApi(productName);
       return {
         products: Array.isArray(response.products) ? response.products : [],
         total: response.total || 0
@@ -53,7 +52,7 @@ export const removeProductFromCart = createAsyncThunk(
   'cart/removeProduct',
   async (productName) => {
     try {
-      const response = await cartApi.removeFromCart(productName);
+      const response = await removeFromCartApi(productName);
       return {
         products: Array.isArray(response.products) ? response.products : [],
         total: response.total || 0
@@ -102,7 +101,7 @@ const cartSlice = createSlice({
         state.error = action.error.message;
         state.data = [];
       })
-      
+
       // Add Product
       .addCase(addProductToCart.pending, (state) => {
         state.status = 'loading';
@@ -110,15 +109,18 @@ const cartSlice = createSlice({
       })
       .addCase(addProductToCart.fulfilled, (state, action) => {
         state.status = 'succeeded';
+        console.log("Payload al añadir:", action.payload); // <--- Añade esto
+        console.log("Estado antes de actualizar:", state); // <--- Añade esto
         state.data = action.payload.products || [];
         state.totalAmount = action.payload.total || 0;
         storeInLocalStorage(state.data);
+        console.log("Estado después de actualizar:", state); // <--- Añade esto
       })
       .addCase(addProductToCart.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
       })
-      
+
       // Remove Product
       .addCase(removeProductFromCart.pending, (state) => {
         state.status = 'loading';
