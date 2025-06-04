@@ -6,17 +6,19 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import { IoMdHeartEmpty, IoMdSearch } from "react-icons/io";
 import { useProducts } from "../data/ProductsData";
-import { addProductToCart as callAddToCartApi } from "../Api/cartApi"; 
-import { useSearchParams } from "react-router-dom"; 
+import { useSearchParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addToCart, getCartTotal } from "../redux/cartSlice"; // Importa la acción local addToCart
 
 const Shop = () => {
   const [isModalOpen, setIsModalOpen] = useState(null);
   const { products: allProducts, loading, error } = useProducts();
-  const [searchParams] = useSearchParams(); 
-  const initialCategoryFilter = searchParams.get('category'); 
+  const [searchParams] = useSearchParams();
+  const initialCategoryFilter = searchParams.get('category');
+  const dispatch = useDispatch();
 
   const [filters, setFilters] = useState({
-    categories: initialCategoryFilter ? [initialCategoryFilter] : [], 
+    categories: initialCategoryFilter ? [initialCategoryFilter] : [],
     brands: [],
     priceRange: [0, 200000],
   });
@@ -74,13 +76,18 @@ const Shop = () => {
     setFilters({ ...filters, [filterType]: updatedFilters });
   };
 
-  const handleAddToCart = async (productName) => {
-    try {
-      const result = await callAddToCartApi(productName);
-      console.log("Producto añadido al carrito:", result);
-    } catch (error) {
-      console.error("Error al añadir producto al carrito:", error);
-    }
+  const handleAddToCartLocal = (item) => {
+    dispatch(
+      addToCart({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        img: item.image,
+        quantity: 1, // Por defecto, se añade 1 item desde la lista
+      })
+    );
+    dispatch(getCartTotal());
+    console.log(`${item.name} añadido al carrito desde la tienda (local)`);
   };
 
   if (loading) {
@@ -177,7 +184,7 @@ const Shop = () => {
                       <div className="opacity-0 group-hover:opacity-100 absolute bottom-2 right-2 bg-white p-2 rounded-full shadow transition-opacity duration-300 ease-in-out">
                         <button
                           className="bg-black text-white h-8 w-8 grid place-items-center rounded-full text-sm"
-                          onClick={() => handleAddToCart(item.name)}
+                          onClick={() => handleAddToCartLocal(item)} // Llama a la función local con el item
                         >
                           <BiCart />
                         </button>

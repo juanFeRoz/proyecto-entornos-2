@@ -5,11 +5,11 @@ import Heading from "../common/Heading";
 import { IoMdHeartEmpty, IoMdSearch } from "react-icons/io";
 import { useProducts } from "../data/ProductsData";
 import { useDispatch } from "react-redux";
-import { addProductToCart as callAddToCartAction } from "../redux/cartSlice"; // Importa la acción de Redux
+import { addToCart, getCartTotal } from "../redux/cartSlice"; // Importa la acción local addToCart
 
 const FlashSale = () => {
   const [isModalOpen, setIsModalOpen] = useState(null);
-  const { getRandomProducts, loading, error, products } = useProducts();
+  const { getRandomProducts, loading, error } = useProducts();
   const dispatch = useDispatch();
 
   const randomProducts = getRandomProducts(10);
@@ -25,9 +25,18 @@ const FlashSale = () => {
     setIsModalOpen(null);
   };
 
-  const handleAddToCart = (productName) => {
-    dispatch(callAddToCartAction(productName));
-    console.log(`Añadiendo ${productName} al carrito desde FlashSale`);
+  const handleAddToCartLocal = (item) => {
+    dispatch(
+      addToCart({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        img: item.image,
+        quantity: 1, // Por defecto, se añade 1 item desde la lista
+      })
+    );
+    dispatch(getCartTotal());
+    console.log(`Añadiendo ${item.name} al carrito desde FlashSale (local)`);
     // Aquí podrías añadir alguna notificación visual si lo deseas
   };
 
@@ -69,7 +78,7 @@ const FlashSale = () => {
                   <div className="opacity-0 group-hover:opacity-100 absolute bottom-2 right-2 bg-white p-2 rounded-full shadow transition-opacity duration-300 ease-in-out">
                     <button
                       className="bg-black text-white h-8 w-8 grid place-items-center rounded-full text-sm"
-                      onClick={() => handleAddToCart(item.name)}
+                      onClick={() => handleAddToCartLocal(item)} // Llama a la función local
                     >
                       <BiCart />
                     </button>

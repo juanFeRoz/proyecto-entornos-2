@@ -13,7 +13,7 @@ import {
 } from "react-icons/io";
 import { useProducts } from "../data/ProductsData"; // Importa el hook personalizado
 import { useDispatch } from "react-redux";
-import { addProductToCart as callAddToCart } from "../redux/cartSlice";
+import { addToCart, getCartTotal } from "../redux/cartSlice"; // Importa la acción local addToCart
 
 const BestSeller = () => {
   const { products, loading, error } = useProducts(); // Usa el hook para acceder a los datos
@@ -28,9 +28,18 @@ const BestSeller = () => {
     setIsModalOpen(null);
   };
 
-  const handleAddToCart = (productName) => {
-    dispatch(callAddToCart(productName));
-    console.log(`Añadiendo ${productName} al carrito desde BestSeller`);
+  const handleAddToCartLocal = (item) => {
+    dispatch(
+      addToCart({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        img: item.image,
+        quantity: 1, // Por defecto, se añade 1 item desde la lista
+      })
+    );
+    dispatch(getCartTotal());
+    console.log(`Añadiendo ${item.name} al carrito desde BestSeller (local)`);
   };
 
   const getImageById = (id, productImage) => {
@@ -88,7 +97,7 @@ const BestSeller = () => {
                 <div className="opacity-0 group-hover:opacity-100 absolute bottom-2 right-2 bg-white p-2 rounded-full shadow transition">
                   <button
                     className="bg-black text-white h-8 w-8 grid place-items-center rounded-full text-sm"
-                    onClick={() => handleAddToCart(item.name)}
+                    onClick={() => handleAddToCartLocal(item)} // Llama a la función local con el item
                   >
                     <BiCart size={20} />
                   </button>

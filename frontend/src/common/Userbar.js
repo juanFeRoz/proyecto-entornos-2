@@ -1,10 +1,44 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import LoginForm from "../components/Auth/LoginForm";
 
 const Userbar = ({ isUserbarOpen, closeUserbar }) => {
   const loggedInUsername = localStorage.getItem("loggedInUser");
+  const [purchaseHistory, setPurchaseHistory] = useState([]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (loggedInUsername) {
+        const storedHistory = localStorage.getItem('user_history');
+        if (storedHistory) {
+          setPurchaseHistory(JSON.parse(storedHistory));
+        } else {
+          setPurchaseHistory([]);
+        }
+      } else {
+        setPurchaseHistory([]);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cargar el historial inicial
+    if (loggedInUsername) {
+      const storedHistory = localStorage.getItem('user_history');
+      if (storedHistory) {
+        setPurchaseHistory(JSON.parse(storedHistory));
+      } else {
+        setPurchaseHistory([]);
+      }
+    } else {
+      setPurchaseHistory([]);
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [loggedInUsername]);
 
   return (
     <div
@@ -27,7 +61,24 @@ const Userbar = ({ isUserbarOpen, closeUserbar }) => {
         {loggedInUsername ? (
           <div>
             <p className="text-lg font-semibold mb-4">Bienvenido, {loggedInUsername}!</p>
-            {/* Aquí podrías añadir más opciones del perfil del usuario */}
+
+            {/* Historial de Compras */}
+            <div className="mb-6 text-left">
+              <h3 className="text-xl font-semibold mb-2">Historial de Compras</h3>
+              {purchaseHistory.length > 0 ? (
+                <ul className="list-disc pl-5">
+                  {purchaseHistory.map((item, index) => (
+                    <li key={index} className="mb-2 text-sm">
+                      {item.name} - Cantidad: {item.quantity} - Precio: ${item.price.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm italic text-gray-600">No hay compras en tu historial.</p>
+              )}
+            </div>
+
+            {/* Botón de Cerrar Sesión */}
             <button
               onClick={() => {
                 localStorage.removeItem("loggedInUser");

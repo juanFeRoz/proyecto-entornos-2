@@ -1,42 +1,22 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { FaTimes } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCart, removeProductFromCart } from "../redux/cartSlice";
+import { removeFromCart } from "../redux/cartSlice"; // Importa la acción local
 import { Link } from "react-router-dom";
 
 const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
   const dispatch = useDispatch();
-  const { data: cartProducts = [], totalAmount = 0, status, error } = useSelector(
+  const { data: cartProducts = [], totalAmount = 0 } = useSelector(
     (state) => state.cart
   );
 
-  useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchCart());
-    }
-  }, [status, dispatch]);
-
-  const removeFromCart = async (productName) => {
-    try {
-      await dispatch(removeProductFromCart(productName));
-    } catch (error) {
-      console.error("Error removing item from cart:", error);
-    }
+  const handleRemoveFromCartLocal = (item) => {
+    dispatch(removeFromCart(item));
+    console.log(`Eliminando ${item.name} del carrito (local)`);
+    // No necesitamos recargar el carrito, ya que se actualiza localmente
   };
 
   const renderContent = () => {
-    if (status === 'loading') {
-      return <div className="flex justify-center items-center h-[60vh]">
-        <p>Cargando...</p>
-      </div>;
-    }
-
-    if (error) {
-      return <div className="flex justify-center items-center h-[60vh]">
-        <p className="text-red-500">Error: {error}</p>
-      </div>;
-    }
-    console.log("Productos en Sidebar:", cartProducts);
     if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
       return <p className="text-center py-8">Tu carrito está vacío</p>;
     }
@@ -46,9 +26,9 @@ const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
         {cartProducts.map((item) => (
           <div key={item.id || item.name} className="flex items-center justify-between py-2 border-b">
             <div className="flex items-center">
-              <img 
-                src={item.image} 
-                alt={item.name} 
+              <img
+                src={item.image}
+                alt={item.name}
                 className="w-16 h-16 object-cover rounded"
                 onError={(e) => {
                   e.target.src = '/placeholder-image.jpg'; // Imagen por defecto si falla la carga
@@ -61,14 +41,14 @@ const Sidebar = ({ isSidebarOpen, closeSidebar }) => {
               </div>
             </div>
             <button
-              onClick={() => removeFromCart(item.name)}
+              onClick={() => handleRemoveFromCartLocal(item)} // Usa la función local
               className="text-red-500 hover:text-red-700"
             >
               <FaTimes />
             </button>
           </div>
         ))}
-        
+
         <div className="mt-4 border-t pt-4">
           <div className="flex justify-between items-center">
             <span className="font-semibold">Total:</span>
